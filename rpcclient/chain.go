@@ -582,6 +582,49 @@ func (c *Client) GetBlockHash(blockHeight int64) (*chainhash.Hash, error) {
 	return c.GetBlockHashAsync(blockHeight).Receive()
 }
 
+// FutureWaitForNewBlockResult is a future promise to deliver the result of a
+// WaitForNewBlockAsync RPC invocation (or an applicable error).
+type FutureWaitForNewBlockResult chan *Response
+
+type waitForNewBlockResult struct {
+	Hash   string `json:"hash"`
+	Height int64  `json:"height"`
+}
+type waitForNewBlockResponse struct {
+	Result waitForNewBlockResult `json:"result"`
+	Error  int64                 `json:"error"`
+	Id     string                `json:"id"`
+}
+
+// Receive waits for the Response promised by the future and returns the hash of
+// the block in the best blockchain at the given height.
+func (r FutureWaitForNewBlockResult) Receive() (*chainhash.Hash, error) {
+	res, err := ReceiveFuture(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the result as a string-encoded sha.
+	//{"result":{"hash":"000000000000000000011ce3ceface0f9d2fab709d65a1feebfc94398471a26b","height":838159},"error":null,"id":"curltest"}
+	var txResponse waitForNewBlockResponse
+	err = json.Unmarshal(res, &txResponse)
+	if err != nil {
+		return nil, err
+	}
+	return chainhash.NewHashFromStr(txResponse.Result.Hash)
+}
+
+// WaitForNewBlockAsync
+func (c *Client) WaitForNewBlockAsync() FutureWaitForNewBlockResult {
+	cmd := btcjson.NewWaitForNewBlockCmd()
+	return c.SendCmd(cmd)
+}
+
+// WaitForNewBlock
+func (c *Client) WaitForNewBlock() (*chainhash.Hash, error) {
+	return c.WaitForNewBlockAsync().Receive()
+}
+
 // FutureGetBlockHeaderResult is a future promise to deliver the result of a
 // GetBlockHeaderAsync RPC invocation (or an applicable error).
 type FutureGetBlockHeaderResult chan *Response

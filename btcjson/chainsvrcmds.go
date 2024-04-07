@@ -270,6 +270,15 @@ func NewGetBlockHashCmd(index int64) *GetBlockHashCmd {
 	}
 }
 
+// WaitForNewBlockCmd
+type WaitForNewBlockCmd struct {
+}
+
+// NewWaitForNewBlockCmd
+func NewWaitForNewBlockCmd() *WaitForNewBlockCmd {
+	return &WaitForNewBlockCmd{}
+}
+
 // GetBlockHeaderCmd defines the getblockheader JSON-RPC command.
 type GetBlockHeaderCmd struct {
 	Hash    string
